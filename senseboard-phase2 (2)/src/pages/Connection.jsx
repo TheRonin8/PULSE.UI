@@ -55,7 +55,12 @@ const Connection = () => {
         </div>
       </div>
 
-      <MqttModal modalId="mqttModal" onConnected={() => navigate("/machine")} />
+    <MqttModal modalId="mqttModal" onConnected={() => {
+  document.querySelectorAll(".modal-backdrop").forEach(el => el.remove());
+  document.body.classList.remove("modal-open");
+  document.body.style.removeProperty("padding-right");
+  navigate("/sensor");
+}} />
       <PlaceholderModal modalId="modbusModal" protocol="MODBUS" />
       <PlaceholderModal modalId="opcuaModal" protocol="OPC-UA" />
       <PlaceholderModal modalId="modbustcpModal" protocol="Modbus TCP" />

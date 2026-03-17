@@ -5,7 +5,7 @@ import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Connection from "./pages/Connection";
-import Machine from "./pages/Machine";
+
 import Sensor from "./pages/Sensor";
 import Dashboard from "./pages/Dashboard";
 import Setup from "./pages/Setup";
@@ -29,7 +29,7 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/connection" element={<ProtectedRoute><Connection /></ProtectedRoute>} />
-            <Route path="/machine" element={<ProtectedRoute><Machine /></ProtectedRoute>} />
+            
             <Route path="/sensor" element={<ProtectedRoute><Sensor /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/setup" element={<ProtectedRoute><Setup /></ProtectedRoute>} />
