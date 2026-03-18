@@ -8,7 +8,7 @@ import Connection from "./pages/Connection";
 
 import Sensor from "./pages/Sensor";
 import Dashboard from "./pages/Dashboard";
-import Setup from "./pages/Setup";
+
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./App.css";
@@ -32,7 +32,7 @@ function App() {
             
             <Route path="/sensor" element={<ProtectedRoute><Sensor /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/setup" element={<ProtectedRoute><Setup /></ProtectedRoute>} />
+            
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </Layout>

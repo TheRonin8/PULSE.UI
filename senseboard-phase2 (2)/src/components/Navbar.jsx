@@ -31,11 +31,7 @@ const Navbar = ({ theme, onThemeToggle }) => {
         <ul className="navbar-nav ms-auto align-items-center gap-2">
           {isLoggedIn && (
             <>
-              <li className="nav-item">
-                <NavLink className="nav-link sb-nav-link" to="/setup">
-                  <i className="bi bi-gear me-1"></i> Setup
-                </NavLink>
-              </li>
+             
               <li className="nav-item">
                 <NavLink className="nav-link sb-nav-link" to="/connection">
                   <i className="bi bi-plug me-1"></i> Connection

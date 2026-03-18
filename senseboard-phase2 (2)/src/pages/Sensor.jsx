@@ -1,9 +1,12 @@
-import React, { useState,useEffect} from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Sensor = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("active");
   const [sensors, setSensors] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editSensor, setEditSensor] = useState(null);
   const [successMsg, setSuccessMsg] = useState("");
   const [form, setForm] = useState({
     sensorName: "",
@@ -12,9 +15,13 @@ const Sensor = () => {
     dataDetails: "",
   });
   const [errors, setErrors] = useState({});
+  const [selectedSensor, setSelectedSensor] = useState(null);
+  const [selectedFields, setSelectedFields] = useState([]);
+  const [selectedInterval, setSelectedInterval] = useState("");
+
   useEffect(() => {
-  setSensors([]);
-}, []);
+    setShowForm(false);
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -33,22 +40,58 @@ const Sensor = () => {
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
-    const newSensor = {
-      id: Date.now(),
-      ...form,
-      status: "active",
-      addedOn: new Date().toLocaleDateString(),
-    };
+    if (editSensor) {
+      setSensors(sensors.map(s => s.id === editSensor.id ? { ...s, ...form } : s));
+      setSuccessMsg("Sensor updated successfully!");
+    } else {
+      const newSensor = {
+        id: Date.now(),
+        ...form,
+        status: "active",
+        addedOn: new Date().toLocaleDateString(),
+      };
+      setSensors([...sensors, newSensor]);
+      setSuccessMsg("Sensor added successfully!");
+    }
 
-    setSensors([...sensors, newSensor]);
     setForm({ sensorName: "", location: "", topicName: "", dataDetails: "" });
     setErrors({});
     setShowForm(false);
-    setSuccessMsg("Sensor added successfully!");
+    setEditSensor(null);
+    setTimeout(() => setSuccessMsg(""), 3000);
+  };
+
+  const handleEditClick = (sensor) => {
+    setEditSensor(sensor);
+    setForm({
+      sensorName: sensor.sensorName,
+      location: sensor.location,
+      topicName: sensor.topicName,
+      dataDetails: sensor.dataDetails,
+    });
+    setErrors({});
+    setShowForm(true);
+  };
+
+  const handleDeleteSensor = (id) => {
+    setSensors(sensors.filter(s => s.id !== id));
+    setSuccessMsg("Sensor deleted successfully!");
     setTimeout(() => setSuccessMsg(""), 3000);
   };
 
   const filteredSensors = sensors.filter((s) => s.status === activeTab);
+
+  const handleSensorClick = (sensor) => {
+    setSelectedSensor(sensor);
+    setSelectedFields([]);
+    setSelectedInterval("");
+  };
+
+  const toggleField = (field) => {
+    setSelectedFields((prev) =>
+      prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]
+    );
+  };
 
   return (
     <div>
@@ -73,8 +116,6 @@ const Sensor = () => {
       <div className="container-fluid px-4">
         {/* Top Bar */}
         <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
-
-          {/* Left - Active / Inactive buttons */}
           <div className="d-flex gap-2">
             <button
               className={`btn ${activeTab === "active" ? "sb-primary-btn" : "btn-outline-secondary"}`}
@@ -91,12 +132,10 @@ const Sensor = () => {
               <i className="bi bi-x-circle me-2"></i>Inactive
             </button>
           </div>
-
-          {/* Right - Add Sensor button */}
           <button
             className="btn sb-connect-btn d-flex align-items-center gap-2"
             style={{ borderRadius: "50px", padding: "8px 20px", fontWeight: 600 }}
-            onClick={() => setShowForm(true)}
+            onClick={() => { setEditSensor(null); setForm({ sensorName: "", location: "", topicName: "", dataDetails: "" }); setShowForm(true); }}
           >
             <i className="bi bi-plus-circle-fill" style={{ fontSize: "1.2rem" }}></i>
             Add Sensor
@@ -105,36 +144,58 @@ const Sensor = () => {
 
         {/* Sensor Cards */}
         {filteredSensors.length === 0 ? (
-          <div className="text-center text-muted py-5">
+          <div className="text-center py-5" style={{ userSelect: "none" }}>
             <i className="bi bi-broadcast" style={{ fontSize: "3rem", color: "var(--sb-accent)" }}></i>
-            <p className="mt-3">No {activeTab} sensors found. Click + to add one.</p>
+            <p className="mt-3" style={{ color: "var(--sb-muted)" }}>No {activeTab} sensors found. Click + to add one.</p>
           </div>
         ) : (
           <div className="row g-3">
             {filteredSensors.map((sensor) => (
               <div className="col-12 col-md-6 col-lg-4" key={sensor.id}>
-                <div className="card border-0 shadow-sm p-3" style={{ borderRadius: "12px", backgroundColor: "var(--sb-card-bg)" }}>
+                <div
+                  className="card border-0 shadow-sm p-3"
+                  style={{ borderRadius: "12px", backgroundColor: "var(--sb-card-bg)", userSelect: "none" }}
+                >
                   <div className="d-flex align-items-center justify-content-between mb-2">
                     <h6 className="sb-header-title mb-0">{sensor.sensorName}</h6>
                     <span className="badge" style={{ backgroundColor: "#e8faf8", color: "var(--sb-accent)", border: "1px solid var(--sb-accent)", borderRadius: "20px", fontSize: "0.75rem" }}>
                       <span className="sb-pulse-dot me-1"></span>{sensor.status}
                     </span>
                   </div>
-                  <p className="text-muted small mb-1"><i className="bi bi-geo-alt me-1"></i>{sensor.location}</p>
-                  <p className="text-muted small mb-1"><i className="bi bi-tag me-1"></i>{sensor.topicName}</p>
+                  <p style={{ color: "var(--sb-muted)", fontSize: "0.85rem" }} className="mb-1"><i className="bi bi-geo-alt me-1"></i>{sensor.location}</p>
+                  <p style={{ color: "var(--sb-muted)", fontSize: "0.85rem" }} className="mb-1"><i className="bi bi-tag me-1"></i>{sensor.topicName}</p>
                   {sensor.dataDetails && (
-                    <p className="text-muted small mb-0"><i className="bi bi-card-text me-1"></i>{sensor.dataDetails}</p>
+                    <p style={{ color: "var(--sb-muted)", fontSize: "0.85rem" }} className="mb-0"><i className="bi bi-card-text me-1"></i>{sensor.dataDetails}</p>
                   )}
-                  <p className="text-muted small mt-2 mb-0"><i className="bi bi-calendar me-1"></i>Added: {sensor.addedOn}</p>
+                  <p style={{ color: "var(--sb-muted)", fontSize: "0.85rem" }} className="mt-2 mb-0"><i className="bi bi-calendar me-1"></i>Added: {sensor.addedOn}</p>
 
-                  {/* No Actions Message */}
-                  <div className="mt-3 pt-2" style={{ borderTop: "1px solid var(--sb-border)" }}>
-                    <span className="text-muted small">
-                      <i className="bi bi-info-circle me-1" style={{ color: "var(--sb-accent)" }}></i>
-                      No actions available for this sensor yet.
+                  {/* Card Actions */}
+                  <div className="mt-3 pt-2 d-flex align-items-center justify-content-between" style={{ borderTop: "1px solid var(--sb-border)" }}>
+                    <span
+                      className="small"
+                      style={{ cursor: "pointer", color: "var(--sb-accent)" }}
+                      onClick={() => handleSensorClick(sensor)}
+                    >
+                      <i className="bi bi-sliders me-1"></i>
+                      Configure & View Data
                     </span>
+                    <div className="d-flex gap-3">
+                      <span
+                        className="small"
+                        style={{ cursor: "pointer", color: "var(--sb-muted)" }}
+                        onClick={() => handleEditClick(sensor)}
+                      >
+                        <i className="bi bi-pencil-square me-1"></i>Edit
+                      </span>
+                      <span
+                        className="small"
+                        style={{ cursor: "pointer", color: "#e74c3c" }}
+                        onClick={() => handleDeleteSensor(sensor.id)}
+                      >
+                        <i className="bi bi-trash me-1"></i>Delete
+                      </span>
+                    </div>
                   </div>
-
                 </div>
               </div>
             ))}
@@ -142,97 +203,127 @@ const Sensor = () => {
         )}
       </div>
 
-      {/* Add Sensor Overlay Form */}
+      {/* Add / Edit Sensor Form */}
       {showForm && (
         <div
           className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1050 }}
+          style={{ backgroundColor: "rgba(0,0,0,0.6)", zIndex: 1050 }}
         >
           <div
             className="card border-0 shadow-lg p-4"
             style={{ width: "100%", maxWidth: "480px", borderRadius: "16px", backgroundColor: "var(--sb-modal-bg)" }}
           >
-            {/* Form Header */}
             <div className="d-flex align-items-center justify-content-between mb-4">
               <h5 className="sb-modal-title mb-0">
                 <i className="bi bi-broadcast me-2" style={{ color: "var(--sb-accent)" }}></i>
-                Add New Sensor
+                {editSensor ? "Edit Sensor" : "Add New Sensor"}
               </h5>
-              <button
-                className="btn-close btn-close-white"
-                onClick={() => { setShowForm(false); setErrors({}); }}
-              ></button>
+              <button className="btn-close btn-close-white" onClick={() => { setShowForm(false); setErrors({}); setEditSensor(null); }}></button>
             </div>
-
-            {/* Sensor Name */}
             <div className="mb-3">
               <label className="sb-modal-label">Sensor Name <span className="text-danger">*</span></label>
-              <input
-                type="text"
-                name="sensorName"
-                className={`form-control sb-modal-input ${errors.sensorName ? "is-invalid" : ""}`}
-                placeholder="e.g. Temperature Sensor 1"
-                value={form.sensorName}
-                onChange={handleChange}
-              />
+              <input type="text" name="sensorName" className={`form-control sb-modal-input ${errors.sensorName ? "is-invalid" : ""}`} placeholder="e.g. Temperature Sensor 1" value={form.sensorName} onChange={handleChange} />
               {errors.sensorName && <div className="invalid-feedback">{errors.sensorName}</div>}
             </div>
-
-            {/* Location */}
             <div className="mb-3">
               <label className="sb-modal-label">Location <span className="text-danger">*</span></label>
-              <input
-                type="text"
-                name="location"
-                className={`form-control sb-modal-input ${errors.location ? "is-invalid" : ""}`}
-                placeholder="e.g. Factory Floor A"
-                value={form.location}
-                onChange={handleChange}
-              />
+              <input type="text" name="location" className={`form-control sb-modal-input ${errors.location ? "is-invalid" : ""}`} placeholder="e.g. Factory Floor A" value={form.location} onChange={handleChange} />
               {errors.location && <div className="invalid-feedback">{errors.location}</div>}
             </div>
-
-            {/* Topic Name */}
             <div className="mb-3">
               <label className="sb-modal-label">Topic Name <span className="text-danger">*</span></label>
-              <input
-                type="text"
-                name="topicName"
-                className={`form-control sb-modal-input ${errors.topicName ? "is-invalid" : ""}`}
-                placeholder="e.g. sensors/temperature/1"
-                value={form.topicName}
-                onChange={handleChange}
-              />
+              <input type="text" name="topicName" className={`form-control sb-modal-input ${errors.topicName ? "is-invalid" : ""}`} placeholder="e.g. sensors/temperature/1" value={form.topicName} onChange={handleChange} />
               {errors.topicName && <div className="invalid-feedback">{errors.topicName}</div>}
             </div>
-
-            {/* Data Details */}
             <div className="mb-4">
-              <label className="sb-modal-label">Data Details <span className="text-muted small">(optional)</span></label>
-              <textarea
-                name="dataDetails"
-                className="form-control sb-modal-input"
-                placeholder="Enter any additional details about this sensor..."
-                rows={4}
-                value={form.dataDetails}
-                onChange={handleChange}
-                style={{ resize: "none" }}
-              />
+              <label className="sb-modal-label">Data Details <span style={{ color: "var(--sb-modal-label)", fontSize: "0.78rem" }}>(comma separated e.g. Temperature, Humidity)</span></label>
+              <textarea name="dataDetails" className="form-control sb-modal-input" placeholder="e.g. Temperature, Humidity, Pressure" rows={4} value={form.dataDetails} onChange={handleChange} style={{ resize: "none" }} />
+            </div>
+            <div className="d-flex gap-2 justify-content-end">
+              <button className="btn sb-cancel-btn" onClick={() => { setShowForm(false); setErrors({}); setEditSensor(null); }}>Cancel</button>
+              <button className="btn sb-connect-btn" onClick={handleAddSensor}>
+                <i className={`bi ${editSensor ? "bi-save" : "bi-plus-circle"} me-2`}></i>
+                {editSensor ? "Save Changes" : "Add Sensor"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sensor Detail Popup */}
+      {selectedSensor && (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+          style={{ backgroundColor: "rgba(0,0,0,0.6)", zIndex: 1060 }}
+        >
+          <div
+            className="card border-0 shadow-lg p-4"
+            style={{ width: "100%", maxWidth: "500px", borderRadius: "16px", backgroundColor: "var(--sb-modal-bg)", maxHeight: "90vh", overflowY: "auto" }}
+          >
+            <div className="d-flex align-items-center justify-content-between mb-3">
+              <h5 className="sb-modal-title mb-0">
+                <i className="bi bi-broadcast me-2" style={{ color: "var(--sb-accent)" }}></i>
+                {selectedSensor.sensorName}
+              </h5>
+              <button className="btn-close btn-close-white" onClick={() => setSelectedSensor(null)}></button>
             </div>
 
-            {/* Footer Buttons */}
-            <div className="d-flex gap-2 justify-content-end">
-              <button
-                className="btn sb-cancel-btn"
-                onClick={() => { setShowForm(false); setErrors({}); }}
+            <div className="mb-3 p-3" style={{ backgroundColor: "var(--sb-modal-input-bg)", borderRadius: "10px" }}>
+              <p className="sb-modal-label mb-1"><i className="bi bi-geo-alt me-1"></i>Location: <span style={{ color: "var(--sb-modal-text)" }}>{selectedSensor.location}</span></p>
+              <p className="sb-modal-label mb-0"><i className="bi bi-tag me-1"></i>Topic: <span style={{ color: "var(--sb-modal-text)" }}>{selectedSensor.topicName}</span></p>
+            </div>
+
+            <div className="mb-3">
+              <label className="sb-modal-label mb-2">Select Data Fields to Display</label>
+              <div className="d-flex flex-column gap-2">
+                {!selectedSensor.dataDetails || selectedSensor.dataDetails.trim() === "" ? (
+                  <p className="small mb-0" style={{ color: "var(--sb-modal-text)" }}>
+                    No data fields specified in Data Details.
+                  </p>
+                ) : selectedSensor.dataDetails.split(",").map(f => f.trim()).filter(f => f).map((field) => (
+                  <div
+                    key={field}
+                    className="d-flex align-items-center justify-content-between p-2"
+                    style={{ backgroundColor: "var(--sb-modal-input-bg)", borderRadius: "8px", cursor: "pointer" }}
+                    onClick={() => toggleField(field)}
+                  >
+                    <span style={{ color: "#ffffff", fontSize: "0.88rem" }}>{field}</span>
+                    <input
+                      type="checkbox"
+                      checked={selectedFields.includes(field)}
+                      onChange={() => toggleField(field)}
+                      style={{ accentColor: "var(--sb-accent)", width: "16px", height: "16px", cursor: "pointer" }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="sb-modal-label mb-2">Select Time Interval</label>
+              <select
+                className="form-select sb-modal-input"
+                value={selectedInterval}
+                onChange={(e) => setSelectedInterval(e.target.value)}
               >
-                Cancel
-              </button>
+                <option value="">-- Select Interval --</option>
+                <option value="1 Week">1 Week</option>
+                <option value="15 Days">15 Days</option>
+                <option value="1 Month">1 Month</option>
+                <option value="3 Months">3 Months</option>
+              </select>
+            </div>
+
+            <div className="d-flex justify-content-end">
               <button
                 className="btn sb-connect-btn"
-                onClick={handleAddSensor}
+                disabled={selectedFields.length === 0 || !selectedInterval}
+                onClick={() => {
+                  setSelectedSensor(null);
+                  navigate("/dashboard");
+                }}
               >
-                <i className="bi bi-plus-circle me-2"></i>Add Sensor
+                <i className="bi bi-speedometer2 me-2"></i>View
               </button>
             </div>
           </div>
