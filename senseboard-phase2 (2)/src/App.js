@@ -28,7 +28,7 @@ function App() {
         <Layout theme={theme} onThemeToggle={toggleTheme}>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/connection" element={<ProtectedRoute><Connection /></ProtectedRoute>} />
+            <Route path="/connection" element={<Connection />} />
             
             <Route path="/sensor" element={<ProtectedRoute><Sensor /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

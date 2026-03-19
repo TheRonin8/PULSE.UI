@@ -15,3 +15,4 @@ export const connectBroker = (data) => api.post("/connection/connect", data);
 export const getSensorData = () => api.get("/sensors/latest");
 
 export default api;
+var sensorList = ['TCP','MQTT'];

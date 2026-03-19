@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { connectBroker } from "../api/axios";
-import { PROTOCOLS, MQTT_BROKERS } from "../utils/constants";
+import {  MQTT_BROKERS } from "../utils/constants";
+import { useProtocols } from "../hooks/useprotocols";
 
 const Connection = () => {
   const [selectedProtocol, setSelectedProtocol] = useState("");
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
+  const {protocols,loading,error } = useProtocols();
 
   const handleProtocolSelect = (e) => {
     const protocol = e.target.value;
@@ -49,16 +51,21 @@ const Connection = () => {
                 className="form-select sb-input"
                 value={selectedProtocol}
                 onChange={handleProtocolSelect}
+                disabled = {loading}
               >
-                <option value="">-- Select Protocol --</option>
-                {PROTOCOLS.map((p) => <option key={p}>{p}</option>)}
-              </select>
-              {selectedProtocol && (
-                <p className="text-muted small mt-2 mb-0">
-                  <i className="bi bi-info-circle me-1"></i>
-                  {selectedProtocol} protocol selected. Configure in the modal.
-                </p>
-              )}
+                <option value="">
+                  {loading ? "Loading protocols...." : "--  Select Protocol  --"}
+                </option>
+                {!loading && !error && protocols.map((p) => (
+                  <option key ={p} value={p}>{p}</option>
+                ))}
+                </select>
+                {error && (
+                  <p className="text-danger small mt-2 mb-0">
+                    <i className="bi bi-exclamation-circle me-1"></i>
+                    {error}
+                  </p>
+                )}
             </div>
           </div>
         </div>

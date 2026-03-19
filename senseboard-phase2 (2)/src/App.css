@@ -652,9 +652,7 @@ body::before {
   background: rgba(255,255,255,0.08);
 }
 
-/* ============================================================
-   PLACEHOLDER PAGES
-============================================================ */
+
 .sb-placeholder-page {
   min-height: calc(100vh - var(--sb-navbar-h) - var(--sb-footer-h));
 }
@@ -674,9 +672,7 @@ body::before {
   filter: drop-shadow(0 0 14px var(--sb-accent-glow));
 }
 
-/* ============================================================
-   LIVE BADGE / PULSE
-============================================================ */
+
 .sb-live-badge {
   background: rgba(0,198,174,0.08);
   color: var(--sb-accent);
@@ -705,9 +701,7 @@ body::before {
   50%       { opacity: 0.4; transform: scale(0.75); }
 }
 
-/* ============================================================
-   SPIN
-============================================================ */
+
 .spin {
   display: inline-block;
   animation: spin 1s linear infinite;
@@ -718,9 +712,7 @@ body::before {
   to   { transform: rotate(360deg); }
 }
 
-/* ============================================================
-   RESPONSIVE
-============================================================ */
+
 @media (max-width: 768px) {
   .sb-main { padding: 0; }
   .sb-login-card { border-radius: 16px !important; }
