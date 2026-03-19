@@ -7,3 +7,5 @@ export const MQTT_BROKERS = [
   { name: "HiveMQ", host: "broker.hivemq.com", port: 8884, ssl: true },
   { name: "Mosquitto Test", host: "test.mosquitto.org", port: 8081, ssl: true },
 ];
+
+

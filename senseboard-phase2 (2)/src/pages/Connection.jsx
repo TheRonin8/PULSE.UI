@@ -48,17 +48,18 @@ const Connection = () => {
             <div className="card sb-protocol-card shadow-sm border-0 p-4">
               <h6 className="sb-form-label mb-3">Protocol Name</h6>
               <select
-                className="form-select sb-input"
-                value={selectedProtocol}
-                onChange={handleProtocolSelect}
-                disabled = {loading}
-              >
+  className="form-select sb-input"
+  value={selectedProtocol}
+  onChange={handleProtocolSelect}
+  disabled={loading}
+  style={{ color: "var(--sb-text)", backgroundColor: "var(--sb-light-bg)" }}
+>
                 <option value="">
                   {loading ? "Loading protocols...." : "--  Select Protocol  --"}
                 </option>
-                {!loading && !error && protocols.map((p) => (
-                  <option key ={p} value={p}>{p}</option>
-                ))}
+                {!loading && !error && protocols.map((p, index) => (
+  <option key={index} value={p}>{p}</option>
+))}
                 </select>
                 {error && (
                   <p className="text-danger small mt-2 mb-0">
