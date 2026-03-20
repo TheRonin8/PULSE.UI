@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { MQTTProvider } from "./context/MQTTProvider";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Connection from "./pages/Connection";
+import Setup from "./pages/setup";
 
 import Sensor from "./pages/Sensor";
 import Dashboard from "./pages/Dashboard";
@@ -24,6 +26,7 @@ function App() {
 
   return (
     <AuthProvider>
+  
       <Router>
         <Layout theme={theme} onThemeToggle={toggleTheme}>
           <Routes>
@@ -32,12 +35,13 @@ function App() {
             
             <Route path="/sensor" element={<ProtectedRoute><Sensor /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            
+              <Route path="/setup" element={<ProtectedRoute><Setup /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </Layout>
       </Router>
-    </AuthProvider>
+    
+</AuthProvider>
   );
 }
 

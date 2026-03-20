@@ -1,14 +1,15 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { connectBroker } from "../api/axios";
-import {  MQTT_BROKERS } from "../utils/constants";
+import { MQTT_BROKERS } from "../utils/constants";
+
 import { useProtocols } from "../hooks/useprotocols";
+import { validateConnection, createConnection } from "../api/connectionsapi";
 
 const Connection = () => {
   const [selectedProtocol, setSelectedProtocol] = useState("");
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
-  const {protocols,loading,error } = useProtocols();
+  const { protocols, loading, error } = useProtocols();
 
   const handleProtocolSelect = (e) => {
     const protocol = e.target.value;
@@ -48,25 +49,25 @@ const Connection = () => {
             <div className="card sb-protocol-card shadow-sm border-0 p-4">
               <h6 className="sb-form-label mb-3">Protocol Name</h6>
               <select
-  className="form-select sb-input"
-  value={selectedProtocol}
-  onChange={handleProtocolSelect}
-  disabled={loading}
-  style={{ color: "var(--sb-text)", backgroundColor: "var(--sb-light-bg)" }}
->
+                className="form-select sb-input"
+                value={selectedProtocol}
+                onChange={handleProtocolSelect}
+                disabled={loading}
+                style={{ color: "var(--sb-text)", backgroundColor: "var(--sb-light-bg)" }}
+              >
                 <option value="">
                   {loading ? "Loading protocols...." : "--  Select Protocol  --"}
                 </option>
                 {!loading && !error && protocols.map((p, index) => (
-  <option key={index} value={p}>{p}</option>
-))}
-                </select>
-                {error && (
-                  <p className="text-danger small mt-2 mb-0">
-                    <i className="bi bi-exclamation-circle me-1"></i>
-                    {error}
-                  </p>
-                )}
+                  <option key={index} value={p}>{p}</option>
+                ))}
+              </select>
+              {error && (
+                <p className="text-danger small mt-2 mb-0">
+                  <i className="bi bi-exclamation-circle me-1"></i>
+                  {error}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -96,6 +97,7 @@ const Connection = () => {
 const MqttForm = ({ onConnected, onClose }) => {
   const [tab, setTab] = useState("basic");
   const [status, setStatus] = useState("idle");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [basic, setBasic] = useState({
     brokerName: MQTT_BROKERS[0].name,
@@ -129,15 +131,39 @@ const MqttForm = ({ onConnected, onClose }) => {
 
   const handleConnect = async () => {
     setStatus("connecting");
-    const payload = tab === "basic"
-      ? { type: "basic", brokerName: basic.brokerName, port: basic.port, connectionName: basic.connectionName, ssl: basic.ssl, connectionString: basicConnectionString() }
-      : { type: "custom", ip: custom.ip, brokerName: custom.brokerName, port: custom.port, username: custom.username, password: custom.password, connectionName: custom.connectionName, ssl: custom.ssl, connectionString: customConnectionString() };
+    setErrorMessage("");
+
+    const isCustom = tab === "custom";
+
+    const validatePayload = {
+      connectionUrl: isCustom ? custom.ip : selectedBroker.host,
+      port: isCustom ? Number(custom.port) : Number(basic.port),
+      tlsEnabled: isCustom ? custom.ssl : basic.ssl,
+      isPublic: isCustom ? false : true,
+      username: isCustom ? custom.username : null,
+      password: isCustom ? custom.password : null,
+    };
+
+    const createPayload = {
+      connectionName: isCustom ? custom.connectionName : basic.connectionName,
+      protocol: "MQTT",
+      connectionUrl: validatePayload.connectionUrl,
+      port: validatePayload.port,
+      tlsEnabled: validatePayload.tlsEnabled,
+      isPublic: validatePayload.isPublic,
+      username: validatePayload.username,
+      password: validatePayload.password,
+    };
+
     try {
-      await connectBroker(payload);
+      await validateConnection(validatePayload);
+      await createConnection(createPayload);
       setStatus("connected");
       setTimeout(() => onConnected(), 800);
-    } catch {
+    } catch (err) {
       setStatus("error");
+      const message = err.response?.data?.error || "Connection failed.";
+      setErrorMessage(message);
     }
   };
 
@@ -156,7 +182,8 @@ const MqttForm = ({ onConnected, onClose }) => {
 
       {/* Body */}
       <div className="sb-modal-body" style={{ maxHeight: "60vh", overflowY: "auto" }}>
-        {/* Broker chips */}
+
+        {/* Broker chips - basic only */}
         {tab === "basic" && (
           <div className="d-flex gap-2 mb-3 flex-wrap">
             {MQTT_BROKERS.map((b) => (
@@ -181,6 +208,7 @@ const MqttForm = ({ onConnected, onClose }) => {
           </li>
         </ul>
 
+        {/* Basic Tab */}
         {tab === "basic" ? (
           <>
             <div className="mb-3">
@@ -202,10 +230,16 @@ const MqttForm = ({ onConnected, onClose }) => {
                 <div className="sb-modal-label mb-0">SSL / TLS</div>
                 <small className="text-muted">Use secure connection (WSS)</small>
               </div>
-              <input className="form-check-input sb-switch" type="checkbox" checked={basic.ssl} onChange={(e) => setBasic({ ...basic, ssl: e.target.checked })} />
+              <input
+                className="form-check-input sb-switch"
+                type="checkbox"
+                checked={basic.ssl}
+                onChange={(e) => setBasic({ ...basic, ssl: e.target.checked })}
+              />
             </div>
           </>
         ) : (
+          /* Custom Tab */
           <>
             <div className="mb-3">
               <label className="sb-modal-label">IP</label>
@@ -231,6 +265,18 @@ const MqttForm = ({ onConnected, onClose }) => {
               <label className="sb-modal-label">Connection Name</label>
               <input type="text" className="form-control sb-modal-input" placeholder="e.g. My Custom Connection" value={custom.connectionName} onChange={(e) => setCustom({ ...custom, connectionName: e.target.value })} />
             </div>
+            <div className="mb-3 d-flex align-items-center justify-content-between">
+              <div>
+                <div className="sb-modal-label mb-0">SSL / TLS</div>
+                <small className="text-muted">Use secure connection (WSS)</small>
+              </div>
+              <input
+                className="form-check-input sb-switch"
+                type="checkbox"
+                checked={custom.ssl}
+                onChange={(e) => setCustom({ ...custom, ssl: e.target.checked })}
+              />
+            </div>
           </>
         )}
 
@@ -247,12 +293,26 @@ const MqttForm = ({ onConnected, onClose }) => {
       </div>
 
       {/* Footer */}
-      <div className="sb-modal-footer d-flex justify-content-end gap-2">
-        <button className="btn sb-cancel-btn" onClick={onClose}>Cancel</button>
-        <button className="btn sb-connect-btn" onClick={handleConnect} disabled={status === "connecting"}>
-          {status === "connecting" && <span className="spinner-border spinner-border-sm me-2"></span>}
-          {status === "connected" ? "Connected!" : "Connect"}
-        </button>
+      <div className="sb-modal-footer d-flex flex-column gap-2">
+        {status === "error" && errorMessage && (
+          <p className="text-danger small mb-1 text-end">
+            <i className="bi bi-exclamation-circle me-1"></i>
+            {errorMessage}
+          </p>
+        )}
+        <div className="d-flex justify-content-end gap-2">
+          <button className="btn sb-cancel-btn" onClick={onClose}>Cancel</button>
+          <button
+            className="btn sb-connect-btn"
+            onClick={handleConnect}
+            disabled={status === "connecting"}
+          >
+            {status === "connecting" && (
+              <span className="spinner-border spinner-border-sm me-2"></span>
+            )}
+            {status === "connected" ? "Connected!" : "Connect"}
+          </button>
+        </div>
       </div>
     </div>
   );
