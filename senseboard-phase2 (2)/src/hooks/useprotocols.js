@@ -7,7 +7,7 @@ export const useProtocols = () => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const url = `${process.env.REACT_APP_API_URL}/api/pulse/getconnections`;
+        const url = `${process.env.REACT_APP_API_URL}/api/protocols`;
         console.log("Calling URL:", url);
 
         axios.get(url)

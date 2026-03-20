@@ -33,10 +33,15 @@ const Navbar = ({ theme, onThemeToggle }) => {
             <>
              
               <li className="nav-item">
-                <NavLink className="nav-link sb-nav-link" to="/connection">
-                  <i className="bi bi-plug me-1"></i> Connection
-                </NavLink>
-              </li>
+  <NavLink className="nav-link sb-nav-link" to="/setup">
+    <i className="bi bi-gear me-1"></i> Setup
+  </NavLink>
+</li>
+<li className="nav-item">
+  <NavLink className="nav-link sb-nav-link" to="/connection">
+    <i className="bi bi-plug me-1"></i> Connection
+  </NavLink>
+</li>
               <li className="nav-item">
                 <NavLink className="nav-link sb-nav-link" to="/dashboard">
                   <i className="bi bi-speedometer2 me-1"></i> Dashboard
