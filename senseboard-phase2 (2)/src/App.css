@@ -482,11 +482,11 @@ body::before {
    MQTT MODAL
 ============================================================ */
 .sb-modal-content {
-  background: rgba(20, 32, 50, 0.96) !important;
+  background: var(--sb-white) !important;
   backdrop-filter: blur(24px);
   border-radius: 16px;
-  border: 1px solid rgba(0,198,174,0.15) !important;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,198,174,0.08);
+  border: 1px solid rgba(0,198,174,0.2) !important;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,198,174,0.08);
 }
 
 .sb-modal-header {
@@ -500,7 +500,7 @@ body::before {
   font-family: 'Syne', sans-serif;
   font-weight: 700;
   font-size: 1.15rem;
-  color: #ffffff;
+  color: var(--sb-text);
 }
 
 .sb-modal-body { background: transparent; padding: 12px 24px; color: var(--sb-modal-text); }
@@ -509,16 +509,16 @@ body::before {
 .sb-modal-label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #c8dce8;
+  color: var(--sb-text);
   margin-bottom: 6px;
   display: block;
   letter-spacing: 0.3px;
 }
 
 .sb-modal-input {
-  background-color: rgba(0,0,0,0.3) !important;
-  border: 1px solid rgba(255,255,255,0.12) !important;
-  color: #ffffff !important;
+  background-color: var(--sb-light-bg) !important;
+  border: 1.5px solid var(--sb-border) !important;
+  color: var(--sb-text) !important;
   border-radius: 8px;
   font-size: 0.88rem;
   padding: 10px 14px;
@@ -526,9 +526,9 @@ body::before {
 }
 
 .sb-modal-input:focus {
-  background-color: rgba(0,0,0,0.4) !important;
+  background-color: var(--sb-light-bg) !important;
   border-color: var(--sb-accent) !important;
-  color: #ffffff !important;
+  color: var(--sb-text) !important;
   box-shadow: 0 0 0 3px rgba(0,198,174,0.2), 0 0 16px rgba(0,198,174,0.1) !important;
   outline: none;
 }
@@ -543,9 +543,9 @@ body::before {
 .sb-broker-chips { flex-wrap: wrap; }
 
 .sb-chip-btn {
-  border: 1.5px solid rgba(255,255,255,0.2);
+  border: 1.5px solid var(--sb-border);
   background: transparent;
-  color: #dce8f0;
+  color: var(--sb-text);
   border-radius: 20px;
   font-size: 0.8rem;
   padding: 4px 14px;
@@ -568,7 +568,7 @@ body::before {
 .sb-modal-tabs { border-bottom: 1px solid rgba(255,255,255,0.08); }
 
 .sb-tab-link {
-  color: #8aafc4;
+  color: var(--sb-muted);
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
@@ -596,8 +596,8 @@ body::before {
 }
 
 .sb-conn-string-box {
-  background-color: rgba(0,0,0,0.3);
-  border: 1px solid rgba(255,255,255,0.06);
+  background-color: var(--sb-light-bg);
+  border: 1px solid var(--sb-border);
   border-radius: 8px;
   padding: 12px 14px;
   min-height: 44px;
@@ -647,11 +647,10 @@ body::before {
 }
 
 .sb-cancel-btn:hover {
-  border-color: rgba(255,255,255,0.55);
-  color: white;
-  background: rgba(255,255,255,0.08);
+  border-color: var(--sb-primary);
+  color: var(--sb-primary);
+  background: transparent;
 }
-
 
 .sb-placeholder-page {
   min-height: calc(100vh - var(--sb-navbar-h) - var(--sb-footer-h));
@@ -746,4 +745,8 @@ body::before {
 ::-moz-selection {
   background: rgba(0, 198, 174, 0.25);
   color: var(--sb-text);
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

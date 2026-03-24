@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import { MQTTProvider } from "./context/MQTTProvider";
+import { useMqtt } from "./hooks/useMQTT";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
@@ -27,14 +27,14 @@ function App() {
   return (
     <AuthProvider>
   
-      <Router>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Layout theme={theme} onThemeToggle={toggleTheme}>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/connection" element={<Connection />} />
             
             <Route path="/sensor" element={<ProtectedRoute><Sensor /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/setup" element={<ProtectedRoute><Setup /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
