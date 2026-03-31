@@ -2,59 +2,65 @@ import { useEffect, useRef, useState } from "react";
 import mqtt from "mqtt";
  
 export const useMqtt = (sensorName) => {
-    const clientRef             = useRef(null);
-    const [messages, setMessages] = useState([]);
-    const [connected, setConnected] = useState(false);
-    const [error, setError]     = useState(null);
+  const clientRef = useRef(null);
+  const [messages, setMessages] = useState([]);
+  const [connected, setConnected] = useState(false);
+  const [error, setError] = useState(null);
  
-    useEffect(() => {
-        if (!sensorName) return;
+  useEffect(() => {
+    if (!sensorName) return;
  
-        // Connect to Mosquitto via WebSocket
-        // Use the backend machine IP — same machine running Docker
-        const brokerUrl = `ws://${process.env.REACT_APP_BROKER_HOST}:9001`;
-        const topic     = `sensor/${sensorName}`;
+    const brokerUrl = `ws://${process.env.REACT_APP_BROKER_HOST}:9001`;
+    console.log("connecting to:",brokerUrl);
+    const topic = `sensor/${sensorName}`;
  
-        const client = mqtt.connect(brokerUrl, {
-            clientId: `pulse-ui-${Math.random().toString(16).slice(2)}`,
-            clean:    true,
-            reconnectPeriod: 3000,
-        });
+    const client = mqtt.connect(brokerUrl, {
+      username: "adminmqtt",
+      password: "ABBD135836A-FE40-4F81-8754-B8BBAC759D14393",
+      
+      clientId: `pulse-ui-${Math.random().toString(16).slice(2)}`,
+      clean: true,
+      reconnectPeriod: 3000,
+    });
  
-        clientRef.current = client;
+    clientRef.current = client;
  
-        client.on("connect", () => {
-            setConnected(true);
-            setError(null);
-            client.subscribe(topic, { qos: 1 });
-        });
+    client.on("connect", () => {
+      console.log("✅ Connected to MQTT broker");
+      setConnected(true);
+      setError(null);
+      client.subscribe(topic, { qos: 1 }, () => {
+        console.log(`📡 Subscribed to ${topic}`);  // ✅ fixed template literal
+      });
+    });
  
-        client.on("message", (receivedTopic, payload) => {
-            try {
-                const data = JSON.parse(payload.toString());
-                setMessages(prev => [...prev.slice(-99), { ...data, receivedAt: new Date() }]);
-            } catch {
-                // payload was not JSON — store as raw string
-                setMessages(prev => [...prev.slice(-99), {
-                    raw: payload.toString(),
-                    receivedAt: new Date()
-                }]);
-            }
-        });
+    client.on("message", (receivedTopic, payload) => {
+      console.log(`📨 Message on ${receivedTopic}:`, payload.toString());
+      try {
+        const data = JSON.parse(payload.toString());
+        setMessages(prev => [...prev.slice(-99), { ...data, receivedAt: new Date() }]);
+      } catch {
+        setMessages(prev => [...prev.slice(-99), { raw: payload.toString(), receivedAt: new Date() }]);
+      }
+    });
  
-        client.on("error", (err) => {
-            setError(err.message);
-            setConnected(false);
-        });
+    client.on("error", (err) => {
+      console.error("❌ MQTT error:", err.message);
+      setError(err.message);
+      setConnected(false);
+    });
  
-        client.on("disconnect", () => setConnected(false));
+    client.on("disconnect", () => {
+      console.log("🔌 Disconnected from broker");
+      setConnected(false);
+    });
  
-        // Cleanup on unmount or sensorName change
-        return () => {
-            client.unsubscribe(topic);
-            client.end();
-        };
-    }, [sensorName]);
+    return () => {
+      client.unsubscribe(topic);
+      console.log(`🚫 Unsubscribed from ${topic}`);  // ✅ fixed
+      client.end();
+    };
+  }, [sensorName]);
  
-    return { messages, connected, error };
+  return { messages, connected, error };
 };

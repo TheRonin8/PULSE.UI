@@ -16,7 +16,7 @@ const [userId] = useState(localStorage.getItem("sb_userId"));
   };
 
  const logout = () => {
-    localStorage.removeItem("sb_acccess_token");
+    localStorage.removeItem("sb_access_token");
     localStorage.removeItem("sb_username");
     localStorage.removeItem("sb_refreshToken");
     localStorage.removeItem("sb_userId");

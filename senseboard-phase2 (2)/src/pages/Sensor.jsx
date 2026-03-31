@@ -21,30 +21,26 @@ const Sensor = () => {
   const [selectedInterval, setSelectedInterval] = useState("");
 
   const connectionId = Number(localStorage.getItem("sb_connectionId")) || 0;
-const fetchSensors = async () => {
-  if (!connectionId) return;
 
-  try {
-    const data =
-      activeTab === "active"
+  const fetchSensors = async () => {
+    console.log("token:",localStorage.getItem("sb_access_token"));
+    if (!connectionId) return;
+    try {
+      const data = activeTab === "active"
         ? await getActiveSensors(connectionId)
         : await getInactiveSensors(connectionId);
-
-    if (Array.isArray(data)) {
-      setSensors(
-        data.map((s) => ({
+      if (Array.isArray(data)) {
+        const normalized = data.map(s => ({
           ...s,
-          id: s.sensorId,
-          status: activeTab, // ✅ single source of truth
-        }))
-      );
+          status: s.isActive ? "active" : "inactive",
+          id: s.sensorId
+        }));
+        setSensors(normalized);
+      }
+    } catch (err) {
+      console.error("Error fetching sensors:", err);
     }
-  } catch (err) {
-    console.error("Error fetching sensors:", err);
-  }
-};
-
-  
+  };
 
   useEffect(() => {
     setShowForm(false);
@@ -108,26 +104,21 @@ const fetchSensors = async () => {
     }
   };
 
- const handleToggleStatus = async (sensor) => {
-  try {
-    const id = sensor.id;
-
-    if (activeTab === "active") {
-      await inactivateSensor(id);
-      setSuccessMsg("Sensor deactivated successfully!");
-    } else {
-      await activateSensor(id);
-      setSuccessMsg("Sensor activated successfully!");
+  const handleToggleStatus = async (sensor) => {
+    try {
+      if (sensor.status === "active") {
+        await inactivateSensor(sensor.sensorId);
+        setSuccessMsg("Sensor deactivated successfully!");
+      } else {
+        await activateSensor(sensor.sensorId);
+        setSuccessMsg("Sensor activated successfully!");
+      }
+      setTimeout(() => setSuccessMsg(""), 3000);
+      fetchSensors();
+    } catch (err) {
+      console.error("Toggle status error:", err);
     }
-
-    // ✅ Immediately remove from current tab
-    setSensors((prev) => prev.filter((s) => s.id !== id));
-
-    setTimeout(() => setSuccessMsg(""), 3000);
-  } catch (err) {
-    console.error("Toggle status error:", err);
-  }
-};
+  };
 
   const handleDeleteSensor = (id) => {
     setSensors(sensors.filter(s => s.id !== id));
@@ -135,7 +126,7 @@ const fetchSensors = async () => {
     setTimeout(() => setSuccessMsg(""), 3000);
   };
 
-  
+  const filteredSensors = sensors.filter((s) => s.status === activeTab);
 
   const handleSensorClick = (sensor) => {
     setSelectedSensor(sensor);
@@ -160,8 +151,8 @@ const fetchSensors = async () => {
 
       {successMsg && (
         <div className="position-fixed top-0 end-0 m-4" style={{ zIndex: 9999 }}>
-<div className="alert d-flex align-items-center gap-2 shadow" style={{ backgroundColor: "#d1e7dd", color: "#0a3622", border: "1px solid #a3cfbb" }}>           
-   <i className="bi bi-check-circle-fill"></i>
+          <div className="alert alert-success d-flex align-items-center gap-2 shadow">
+            <i className="bi bi-check-circle-fill"></i>
             {successMsg}
           </div>
         </div>
@@ -171,11 +162,11 @@ const fetchSensors = async () => {
         <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
           <div className="d-flex gap-2">
             <button className={`btn ${activeTab === "active" ? "sb-primary-btn" : "btn-outline-secondary"}`} style={{ borderRadius: "8px", padding: "7px 22px", fontWeight: 600 }} onClick={() => setActiveTab("active")}>
-  <i className={`bi ${activeTab === "active" ? "bi-toggle-on" : "bi-toggle-off"} me-2`}></i>Active
-</button>
-<button className={`btn ${activeTab === "inactive" ? "sb-primary-btn" : "btn-outline-secondary"}`} style={{ borderRadius: "8px", padding: "7px 22px", fontWeight: 600 }} onClick={() => setActiveTab("inactive")}>
-  <i className={`bi ${activeTab === "inactive" ? "bi-toggle-on" : "bi-toggle-off"} me-2`}></i>Inactive
-</button>
+              <i className="bi bi-check-circle me-2"></i>Active
+            </button>
+            <button className={`btn ${activeTab === "inactive" ? "sb-primary-btn" : "btn-outline-secondary"}`} style={{ borderRadius: "8px", padding: "7px 22px", fontWeight: 600 }} onClick={() => setActiveTab("inactive")}>
+              <i className="bi bi-x-circle me-2"></i>Inactive
+            </button>
           </div>
           <button className="btn sb-connect-btn d-flex align-items-center gap-2" style={{ borderRadius: "50px", padding: "8px 20px", fontWeight: 600 }} onClick={() => { setEditSensor(null); setForm({ sensorName: "", location: "", topicName: "", quantity: "", unit: "" }); setShowForm(true); }}>
             <i className="bi bi-plus-circle-fill" style={{ fontSize: "1.2rem" }}></i>
@@ -190,8 +181,7 @@ const fetchSensors = async () => {
           </div>
         ) : (
           <div className="row g-3">
-            {sensors.map((sensor) => (
-
+            {filteredSensors.map((sensor) => (
               <div className="col-12 col-md-6 col-lg-4" key={sensor.id || sensor.sensorId}>
                 <div className="card border-0 shadow-sm p-3" style={{ borderRadius: "12px", backgroundColor: "var(--sb-card-bg)", userSelect: "none" }}>
                   <div className="d-flex align-items-center justify-content-between mb-2">
@@ -321,7 +311,8 @@ const fetchSensors = async () => {
               </select>
             </div>
             <div className="d-flex justify-content-end">
-              <button className="btn sb-connect-btn" disabled={selectedFields.length === 0 || !selectedInterval} onClick={() => { setSelectedSensor(null); navigate("/dashboard"); }}>
+              <button className="btn sb-connect-btn" disabled={selectedFields.length === 0 || !selectedInterval}
+               onClick={() => {   setSelectedSensor(null);   navigate("/dashboard", {     state: {       sensorId: selectedSensor.sensorId,       sensorName: selectedSensor.sensorName,       interval: selectedInterval,       unit: selectedSensor.unit,     }   }); }}>
                 <i className="bi bi-speedometer2 me-2"></i>View
               </button>
             </div>
