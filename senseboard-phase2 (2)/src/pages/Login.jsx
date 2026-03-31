@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { loginUser, registerUser } from "../api/axios";
+import { loginUser, registerUser } from "../api/authapi";
 import logo from "../components/assets/logo.png";
+
 
 const Login = () => {
   const { login } = useAuth();
@@ -50,24 +51,38 @@ const Login = () => {
     setLoading(true);
     try {
       if (mode === "login") {
-        const res = await loginUser({ username: form.username, password: form.password });
-        login(res.data.token, form.username);
-        navigate("/connection");
-      } else {
-        await registerUser({
-          fullName: form.fullName,
-          email: form.email,
-          contactNo: form.contactNo,
-          username: form.username,
-          password: form.password,
-        });
-        setMode("login");
-        setForm({ fullName: "", email: "", contactNo: "", username: "", password: "", confirmPassword: "" });
-        setServerError("Registered! Please log in.");
-      }
+  const res = await loginUser({ username: form.username, password: form.password });
+  if (res?.accessToken && res?.refreshToken) {
+  localStorage.setItem("sb_access_token", res.accessToken);
+  localStorage.setItem("sb_refresh_token", res.refreshToken);
+  localStorage.setItem("sb_userId", res.userId);
+  localStorage.setItem("sb_username", res.username);
+
+  login(res.accessToken, res.username);
+setServerError("Login Successful!");
+setTimeout(() => navigate("/connection"), 1000);
+}
+} else {
+  const res = await registerUser({
+    username:  form.username,
+    email:     form.email,
+    fullName:  form.fullName,
+    contactNo: form.contactNo,
+    password:  form.password,
+  });
+  if (res?.message) {
+  setServerError(res.message);
+    setMode("login");
+    setForm({ fullName: "", email: "", contactNo: "", username: form.username, password: "", confirmPassword: "" });
+
+  }
+}
     } catch (err) {
-      setServerError(err.response?.data?.message || "Something went wrong. Try again.");
-    } finally {
+      console.log("Full error:", err);
+         console.log("Response:", err.response);
+            console.log("Status:", err.response?.status);
+               console.log("Message:", err.response?.data);
+setServerError(err.response?.data?.message || err.response?.data?.title || "Invalid credentials. Try again.");    } finally {
       setLoading(false);
     }
   };
@@ -84,8 +99,7 @@ const Login = () => {
           </div>
 
           {serverError && (
-            <div className={`alert ${serverError.includes("Registered") ? "alert-success" : "alert-danger"} py-2 small`}>
-              {serverError}
+<div className={`alert py-2 small`} style={{ backgroundColor: serverError.includes("successful") || serverError.includes("Login") || serverError.includes("Registered") ? "#d1e7dd" : "#f8d7da", color: serverError.includes("successful") || serverError.includes("Login") || serverError.includes("Registered") ? "#0a3622" : "#842029", border: "none" }}>              {serverError}
             </div>
           )}
 

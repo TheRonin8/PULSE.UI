@@ -1,95 +1,139 @@
-import React from "react";
-import { useMqtt } from "../hooks/useMQTT";
+import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
+import {
+  Chart as ChartJS,
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  Tooltip,
+  Legend
+} from "chart.js";
+import { Line } from "react-chartjs-2";
+import { getSensorData } from "../api/sensorDataApi";
 
-const Dashboard = ({ sensorName }) => {
-  const { messages, connected, error, clearMessages } = useMqtt("Demo_sensor");
+// ✅ Register Chart.js components
+ChartJS.register(
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  Tooltip,
+  Legend
+);
 
-  const latestMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+const Dashboard = () => {
+
+  const location = useLocation();
+  const { sensorId, sensorName, interval, unit } = location.state || {};
+
+  const [chartData, setChartData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (sensorId && interval) {
+      fetchSensorData();
+    }
+  }, [sensorId, interval]);
+
+  const fetchSensorData = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const data = await getSensorData(sensorId);
+      const filtered = filterDataByInterval(data);
+      prepareChartData(filtered);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load sensor data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getDaysFromInterval = () => {
+    switch (interval) {
+      case "1 Week":
+        return 7;
+      case "15 Days":
+        return 15;
+      case "1 Month":
+        return 30;
+      case "3 Months":
+        return 90;
+      default:
+        return 7;
+    }
+  };
+
+  const filterDataByInterval = (data) => {
+    const days = getDaysFromInterval();
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+
+    return data.filter(item =>
+      new Date(item.timestamp) >= cutoff
+    );
+  };
+
+  const prepareChartData = (data) => {
+    if (!data || data.length === 0) {
+      setChartData(null);
+      return;
+    }
+
+    const labels = data.map(item =>
+      new Date(item.timestamp).toLocaleDateString()
+    );
+
+    const values = data.map(item => item.value);
+
+    setChartData({
+      labels,
+      datasets: [
+        {
+          label: `${sensorName} (${unit || ""})`,
+          data: values,
+          borderColor: "#00c6ae",
+          backgroundColor: "rgba(0,198,174,0.15)",
+          fill: true,
+          tension: 0.4,
+          pointRadius: 3
+        }
+      ]
+    });
+  };
 
   return (
-    <div>
-      <div className="sb-page-header px-4 py-3 mb-4">
-        <h5 className="sb-header-title mb-1">
-          <i className="bi bi-speedometer2 me-2 sb-accent"></i>Dashboard
-        </h5>
-        <p className="sb-header-subtitle mb-0">
-          Live sensor data visualization.
-          <span className="ms-2">
-            {connected ? (
-              <span style={{ color: "#28c76f" }}>
-                <i className="bi bi-circle-fill me-1" style={{ fontSize: "0.6rem" }}></i>
-                Live
-              </span>
-            ) : (
-              <span style={{ color: "#e74c3c" }}>
-                <i className="bi bi-circle-fill me-1" style={{ fontSize: "0.6rem" }}></i>
-                Disconnected
-              </span>
-            )}
-          </span>
-          {error && (
-            <span className="text-danger small ms-2">
-              <i className="bi bi-exclamation-circle me-1"></i>
-              {error}
-            </span>
-          )}
-        </p>
-      </div>
+    <div className="container-fluid px-4">
+      <h4 className="mb-4">
+         {sensorName} Plotted Graph {interval}
+      </h4>
 
-      <div className="container-fluid px-4">
-        {!latestMessage ? (
-          <div className="text-center py-5">
-            <i className="bi bi-broadcast" style={{ fontSize: "3rem", color: "var(--sb-accent)" }}></i>
-            <p className="mt-3" style={{ color: "var(--sb-muted)" }}>
-              Waiting for live sensor data...
-            </p>
-          </div>
-        ) : (
-          <div className="row g-3">
-            <div className="col-12 col-md-6 col-lg-4">
-              <div
-                className="card border-0 shadow-sm p-3"
-                style={{ borderRadius: "12px", backgroundColor: "var(--sb-card-bg)" }}
-              >
-                <div className="d-flex align-items-center justify-content-between mb-2">
-                  <h6 className="sb-header-title mb-0">
-                    <i className="bi bi-broadcast me-2 sb-accent"></i>
-                    {latestMessage.topic || "Sensor Data"}
-                  </h6>
-                  <span className="sb-live-badge">
-                    <span className="sb-pulse-dot"></span> LIVE
-                  </span>
-                </div>
-                <pre style={{
-                  color: "var(--sb-accent)",
-                  fontSize: "0.82rem",
-                  margin: 0,
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-all"
-                }}>
-                  {(() => {
-                    const { receivedAt, raw, ...sensorData } = latestMessage;
-                    return raw ? raw : JSON.stringify(sensorData, null, 2);
-                  })()}
-                </pre>
-                <p style={{ color: "var(--sb-muted)", fontSize: "0.75rem" }} className="mt-2 mb-0">
-                  <i className="bi bi-clock me-1"></i>
-                  {latestMessage.receivedAt?.toLocaleTimeString()}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+      {loading && <p>Loading sensor data...</p>}
 
-        {messages.length > 0 && (
-          <button
-            className="btn btn-sm btn-outline-secondary mt-3"
-            onClick={clearMessages}
-          >
-            Clear
-          </button>
-        )}
-      </div>
+      {error && <p className="text-danger">{error}</p>}
+
+      {chartData && !loading && (
+        <Line
+          data={chartData}
+          options={{
+            responsive: true,
+            plugins: {
+              legend: { display: true }
+            },
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }}
+        />
+      )}
+
+      {!loading && !chartData && (
+        <p>No data available for selected interval.</p>
+      )}
     </div>
   );
 };

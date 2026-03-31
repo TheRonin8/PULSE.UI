@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/axiosInstance";
 
 export const useProtocols = () => {
     const [protocols, setProtocols] = useState([]);
@@ -10,7 +10,7 @@ export const useProtocols = () => {
         const url = `${process.env.REACT_APP_API_URL}/api/protocols`;
         console.log("Calling URL:", url);
 
-        axios.get(url)
+        api.get(url)
             .then(res => {
                 console.log("API Response:", res.data);
                 // API returns plain array of strings ["MQTT", "TCP"]

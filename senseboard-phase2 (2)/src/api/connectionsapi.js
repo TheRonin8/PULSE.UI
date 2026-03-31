@@ -1,9 +1,9 @@
-import axios from "axios";
+import api from "./axiosInstance";;
 
 const BASE_URL = process.env.REACT_APP_API_URL;
 
 export const validateConnection = async (payload) => {
-    const response = await axios.post(
+    const response = await api.post(
         `${BASE_URL}/api/Connections/validate`,
         {
             connectionUrl: payload.connectionUrl,
@@ -18,7 +18,7 @@ export const validateConnection = async (payload) => {
 };
 
 export const createConnection = async (payload) => {
-    const response = await axios.post(
+    const response = await api.post(
         `${BASE_URL}/api/Connections`,
         {
             connectionName: payload.connectionName,
@@ -35,6 +35,6 @@ export const createConnection = async (payload) => {
 };
 
 export const getConnections = async () => {
-    const response = await axios.get(`${BASE_URL}/api/Connections`);
+    const response = await api.get(`${BASE_URL}/api/Connections`);
     return response.data;
 };

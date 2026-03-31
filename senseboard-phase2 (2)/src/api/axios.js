@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "./axiosInstance";;
 import { API_BASE_URL } from "../utils/constants";
 
 // ─── SET TO false WHEN BACKEND IS READY ───────────────────────────────────────
@@ -46,10 +46,10 @@ export const connectBroker = async (data) => {
 };
 
 // ─── Real axios instance (used when MOCK_MODE = false) ────────────────────────
-const api = axios.create({ baseURL: API_BASE_URL });
+const api = api.create({ baseURL: API_BASE_URL });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("sb_token");
+  const token = localStorage.getItem("sb_access_token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });

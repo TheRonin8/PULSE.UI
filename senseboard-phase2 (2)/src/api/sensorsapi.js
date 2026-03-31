@@ -1,9 +1,9 @@
-import axios from "axios";
+import api from "./axiosInstance";;
 
 const BASE_URL = process.env.REACT_APP_API_URL;
 
 export const addSensor = async (payload) => {
-    const response = await axios.post(
+    const response = await api.post(
         `${BASE_URL}/api/Sensors`,
         {
             connectionId: payload.connectionId,
