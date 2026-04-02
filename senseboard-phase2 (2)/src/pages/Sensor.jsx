@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
-import { getActiveSensors } from "../api/activeapi";
-import ConnectionModal from "../components/ConnectionModal";
 import { addSensor, deleteSensor } from "../api/sensorsapi";
+import { getActiveSensors } from "../api/activeapi";
+import { updateConnection, deleteConnection } from "../api/connectionsapi";
+import ConnectionModal from "../components/ConnectionModal";
+import MqttForm from "../components/MqttForm";
 
 const Sensor = () => {
   const navigate = useNavigate();
@@ -16,17 +17,16 @@ const Sensor = () => {
   const [selectedSensor, setSelectedSensor] = useState(null);
   const [selectedFields, setSelectedFields] = useState([]);
   const [selectedInterval, setSelectedInterval] = useState("");
+  const [editingConnection, setEditingConnection] = useState(null);
   const [form, setForm] = useState({ sensorName: "", location: "", topicName: "", quantity: "", unit: "" });
   const [errors, setErrors] = useState({});
 
-  // Load saved connections on mount
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem("sb_connections") || "[]");
     setConnections(saved);
     if (saved.length) setActiveConnectionId(saved[0].id);
   }, []);
 
-  // Fetch sensors when active connection changes
   useEffect(() => {
     if (activeConnectionId) fetchSensors(activeConnectionId);
     else setSensors([]);
@@ -45,13 +45,42 @@ const Sensor = () => {
   };
 
   const handleConnectionSaved = (newConnection) => {
-    // newConnection = { id, name } passed from ConnectionModal
     setShowConnectionModal(false);
     const saved = JSON.parse(localStorage.getItem("sb_connections") || "[]");
     const updated = [...saved, newConnection];
     localStorage.setItem("sb_connections", JSON.stringify(updated));
     setConnections(updated);
     setActiveConnectionId(newConnection.id);
+  };
+
+  const handleDeleteConnection = async (connId) => {
+    if (!window.confirm("Delete this connection?")) return;
+    try {
+      await deleteConnection(connId);
+      const updated = connections.filter(c => c.id !== connId);
+      setConnections(updated);
+      localStorage.setItem("sb_connections", JSON.stringify(updated));
+      if (activeConnectionId === connId) {
+        setActiveConnectionId(updated.length ? updated[0].id : null);
+        setSensors([]);
+      }
+    } catch (err) {
+      console.error("Failed to delete connection:", err);
+    }
+  };
+
+  const handleUpdateConnection = async (updatedData) => {
+    try {
+      await updateConnection(editingConnection.id, updatedData);
+      const updated = connections.map(c =>
+        c.id === editingConnection.id ? { ...c, name: updatedData.connectionName } : c
+      );
+      setConnections(updated);
+      localStorage.setItem("sb_connections", JSON.stringify(updated));
+      setEditingConnection(null);
+    } catch (err) {
+      console.error("Failed to update connection:", err);
+    }
   };
 
   const handleChange = (e) => {
@@ -85,15 +114,17 @@ const Sensor = () => {
       setErrors({ sensorName: err.response?.data?.message || "Failed to add sensor." });
     }
   };
+
   const handleDeleteSensor = async (sensorId) => {
-  if (!window.confirm("Are you sure you want to delete this sensor?")) return;
-  try {
-    await deleteSensor(sensorId);
-    setSensors(prev => prev.filter(s => s.id !== sensorId));
-  } catch (err) {
-    console.error("Failed to delete sensor:", err);
-  }
-};
+    if (!window.confirm("Are you sure you want to delete this sensor?")) return;
+    try {
+      await deleteSensor(sensorId);
+      setSensors(prev => prev.filter(s => s.id !== sensorId));
+    } catch (err) {
+      console.error("Failed to delete sensor:", err);
+    }
+  };
+
   const toggleField = (field) => {
     setSelectedFields(prev => prev.includes(field) ? prev.filter(f => f !== field) : [...prev, field]);
   };
@@ -124,12 +155,26 @@ const Sensor = () => {
               <p className="mb-0 small" style={{ color: "var(--sb-muted)" }}>No connections yet. Add one to get started.</p>
             ) : (
               connections.map(conn => (
-                <button key={conn.id}
-                  className={`btn ${activeConnectionId === conn.id ? "sb-connect-btn" : "btn-outline-secondary"}`}
-                  style={{ borderRadius: "50px", padding: "6px 18px", fontWeight: 600 }}
-                  onClick={() => setActiveConnectionId(conn.id)}>
-                  <i className="bi bi-hdd-network me-1"></i>{conn.name}
-                </button>
+                <div key={conn.id} className="d-flex align-items-center gap-1">
+                  <button
+                    className={`btn ${activeConnectionId === conn.id ? "sb-connect-btn" : "btn-outline-secondary"}`}
+                    style={{ borderRadius: "50px", padding: "6px 18px", fontWeight: 600 }}
+                    onClick={() => setActiveConnectionId(conn.id)}>
+                    <i className="bi bi-hdd-network me-1"></i>{conn.name}
+                  </button>
+                  <button className="btn btn-sm btn-outline-secondary"
+                    style={{ borderRadius: "50%", width: "32px", height: "32px", padding: 0 }}
+                    title="Edit"
+                    onClick={() => setEditingConnection(conn)}>
+                    <i className="bi bi-pencil" style={{ fontSize: "0.75rem" }}></i>
+                  </button>
+                  <button className="btn btn-sm btn-outline-danger"
+                    style={{ borderRadius: "50%", width: "32px", height: "32px", padding: 0 }}
+                    title="Delete"
+                    onClick={() => handleDeleteConnection(conn.id)}>
+                    <i className="bi bi-trash" style={{ fontSize: "0.75rem" }}></i>
+                  </button>
+                </div>
               ))
             )}
           </div>
@@ -188,16 +233,16 @@ const Sensor = () => {
                     <i className="bi bi-calendar me-1"></i>Added: {sensor.createdAt ? new Date(sensor.createdAt).toLocaleDateString() : ""}
                   </p>
                   <div className="mt-3 pt-2 d-flex justify-content-between align-items-center"
-  style={{ borderTop: "1px solid var(--sb-border)" }}>
-  <span style={{ cursor: "pointer", color: "var(--sb-accent)", fontSize: "0.9rem" }}
-    onClick={() => { setSelectedSensor(sensor); setSelectedFields([]); setSelectedInterval(""); }}>
-    <i className="bi bi-sliders me-1"></i>Configure & View Data
-  </span>
-  <span style={{ cursor: "pointer", color: "#dc3545", fontSize: "0.9rem" }}
-    onClick={() => handleDeleteSensor(sensor.id)}>
-    <i className="bi bi-trash me-1"></i>Delete
-  </span>
-</div>
+                    style={{ borderTop: "1px solid var(--sb-border)" }}>
+                    <span style={{ cursor: "pointer", color: "var(--sb-accent)", fontSize: "0.9rem" }}
+                      onClick={() => { setSelectedSensor(sensor); setSelectedFields([]); setSelectedInterval(""); }}>
+                      <i className="bi bi-sliders me-1"></i>Configure & View Data
+                    </span>
+                    <span style={{ cursor: "pointer", color: "#dc3545", fontSize: "0.9rem" }}
+                      onClick={() => handleDeleteSensor(sensor.id)}>
+                      <i className="bi bi-trash me-1"></i>Delete
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -206,12 +251,30 @@ const Sensor = () => {
       </div>
 
       {/* Connection Modal */}
-     {showConnectionModal && (
-  <ConnectionModal
-    onClose={() => setShowConnectionModal(false)}
-    onSave={handleConnectionSaved}
-  />
-)}
+      {showConnectionModal && (
+        <ConnectionModal
+          onClose={() => setShowConnectionModal(false)}
+          onSave={handleConnectionSaved}
+        />
+      )}
+
+      {/* Edit Connection Modal */}
+      {editingConnection && (
+        <MqttForm
+          onClose={() => setEditingConnection(null)}
+          initialData={{
+            connectionName: editingConnection.name,
+            connectionUrl:  editingConnection.connectionUrl || "",
+            port:           editingConnection.port || "1883",
+            username:       editingConnection.username || "",
+            password:       editingConnection.password || "",
+            tlsEnabled:     editingConnection.tlsEnabled || false,
+            isPublic:       editingConnection.isPublic || false,
+          }}
+          onConnected={(updatedData) => handleUpdateConnection(updatedData)}
+          isEditing={true}
+        />
+      )}
 
       {/* Add Sensor Form */}
       {showForm && (
