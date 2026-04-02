@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { addSensor } from "../api/sensorsapi";
+
 import { getActiveSensors } from "../api/activeapi";
 import ConnectionModal from "../components/ConnectionModal";
+import { addSensor, deleteSensor } from "../api/sensorsapi";
 
 const Sensor = () => {
   const navigate = useNavigate();
@@ -84,7 +85,15 @@ const Sensor = () => {
       setErrors({ sensorName: err.response?.data?.message || "Failed to add sensor." });
     }
   };
-
+  const handleDeleteSensor = async (sensorId) => {
+  if (!window.confirm("Are you sure you want to delete this sensor?")) return;
+  try {
+    await deleteSensor(sensorId);
+    setSensors(prev => prev.filter(s => s.id !== sensorId));
+  } catch (err) {
+    console.error("Failed to delete sensor:", err);
+  }
+};
   const toggleField = (field) => {
     setSelectedFields(prev => prev.includes(field) ? prev.filter(f => f !== field) : [...prev, field]);
   };
@@ -178,12 +187,17 @@ const Sensor = () => {
                   <p style={{ color: "var(--sb-muted)", fontSize: "0.85rem" }} className="mt-2 mb-0">
                     <i className="bi bi-calendar me-1"></i>Added: {sensor.createdAt ? new Date(sensor.createdAt).toLocaleDateString() : ""}
                   </p>
-                  <div className="mt-3 pt-2" style={{ borderTop: "1px solid var(--sb-border)" }}>
-                    <span style={{ cursor: "pointer", color: "var(--sb-accent)", fontSize: "0.9rem" }}
-                      onClick={() => { setSelectedSensor(sensor); setSelectedFields([]); setSelectedInterval(""); }}>
-                      <i className="bi bi-sliders me-1"></i>Configure & View Data
-                    </span>
-                  </div>
+                  <div className="mt-3 pt-2 d-flex justify-content-between align-items-center"
+  style={{ borderTop: "1px solid var(--sb-border)" }}>
+  <span style={{ cursor: "pointer", color: "var(--sb-accent)", fontSize: "0.9rem" }}
+    onClick={() => { setSelectedSensor(sensor); setSelectedFields([]); setSelectedInterval(""); }}>
+    <i className="bi bi-sliders me-1"></i>Configure & View Data
+  </span>
+  <span style={{ cursor: "pointer", color: "#dc3545", fontSize: "0.9rem" }}
+    onClick={() => handleDeleteSensor(sensor.id)}>
+    <i className="bi bi-trash me-1"></i>Delete
+  </span>
+</div>
                 </div>
               </div>
             ))}

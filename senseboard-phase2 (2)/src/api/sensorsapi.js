@@ -16,3 +16,7 @@ export const addSensor = async (payload) => {
     );
     return response.data;
 };
+export const deleteSensor = async (sensorId) => {
+  const response = await api.delete(`/api/Sensors/${sensorId}`);
+  return response.data;
+};
