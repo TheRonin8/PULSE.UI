@@ -60,7 +60,7 @@ const Login = () => {
 
   login(res.accessToken, res.username);
 setServerError("Login Successful!");
-setTimeout(() => navigate("/connection"), 1000);
+setTimeout(() => navigate("/sensor"), 1000);
 }
 } else {
   const res = await registerUser({

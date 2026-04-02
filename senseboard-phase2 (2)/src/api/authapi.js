@@ -24,3 +24,8 @@ export const loginUser = async (payload) => {
 
   return response.data;
 };
+export const logoutUser = async () => {
+  const refreshToken = localStorage.getItem("sb_refresh_token");
+  const response = await api.post("/api/auth/logout", { refreshToken });
+  return response.data;
+};
