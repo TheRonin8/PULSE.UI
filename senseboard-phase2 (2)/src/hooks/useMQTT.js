@@ -10,14 +10,14 @@ export const useMqtt = (sensorName) => {
   useEffect(() => {
     if (!sensorName) return;
 
-    const topic = `sensor/${sensorName}`;
-    const client = mqtt.connect(`ws://${process.env.REACT_APP_BROKER_HOST}:9001`, {
-      username: "adminmqtt",
-      password: "ABBD135836A-FE40-4F81-8754-B8BBAC759D14393",
-      clientId: `pulse-ui-${Math.random().toString(16).slice(2)}`,
-      clean: true,
-      reconnectPeriod: 3000,
-    });
+    const topic = `live/${sensorName}`;
+    
+      const client = mqtt.connect(`ws://${process.env.REACT_APP_BROKER_HOST}:9001`, {
+  clientId: `pulse-ui-${Math.random().toString(16).slice(2)}`,
+  clean: true,
+  reconnectPeriod: 3000,
+})
+     
 
     clientRef.current = client;
 

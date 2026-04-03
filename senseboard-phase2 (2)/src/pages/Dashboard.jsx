@@ -59,13 +59,16 @@ const Dashboard = () => {
         const startDate = new Date(Date.now() - getDays() * 86400000).toISOString();
         const endDate = new Date().toISOString();
         const data = await getSensorData(sensorId, startDate, endDate);
+        console.log("Sensor data:", JSON.stringify(data, null, 2));
         if (!data?.length) { setChartData(null); return; }
-        const values = data.map(d => d.value);
-        computeStats(values);
-        setChartData({
-          labels: data.map(d => new Date(d.timestamp).toLocaleDateString()),
-          datasets: [{ ...makeDataset(`${sensorName} (${unit || ""})`), data: values }],
-        });
+        // ✅ Fixed
+const values = data.map(d => d.dataValue);
+computeStats(values);
+setChartData({
+  labels: data.map(d => new Date(d.recordedAt).toLocaleString()),
+  datasets: [{ ...makeDataset(`${sensorName} (${unit || ""})`), data: values }],
+});
+       
       } catch {
         setError("Failed to load sensor data");
       } finally {
@@ -78,7 +81,8 @@ const Dashboard = () => {
   useEffect(() => {
   if (!messages.length) return;
   const latest = messages[messages.length - 1];
-  const value = latest.value ?? parseFloat(latest.raw);
+
+const value = latest.dataValue ?? latest.value ?? parseFloat(latest.raw);
   if (isNaN(value)) return;
 
   // ✅ Only add if timestamp is within selected interval

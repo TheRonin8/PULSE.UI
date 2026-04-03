@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { addSensor, deleteSensor } from "../api/sensorsapi";
 import { getActiveSensors } from "../api/activeapi";
-import { updateConnection, deleteConnection } from "../api/connectionsapi";
+
 import ConnectionModal from "../components/ConnectionModal";
 import MqttForm from "../components/MqttForm";
+import { updateConnection, deleteConnection, getConnections } from "../api/connectionsapi";
 
 const Sensor = () => {
   const navigate = useNavigate();
@@ -21,12 +22,27 @@ const Sensor = () => {
   const [form, setForm] = useState({ sensorName: "", location: "", topicName: "", quantity: "", unit: "" });
   const [errors, setErrors] = useState({});
 
-  useEffect(() => {
+ // ✅ Replace the first useEffect in sensor.jsx
+useEffect(() => {
+  const syncConnections = async () => {
     const saved = JSON.parse(localStorage.getItem("sb_connections") || "[]");
-    setConnections(saved);
-    if (saved.length) setActiveConnectionId(saved[0].id);
-  }, []);
+    if (!saved.length) return;
 
+    try {
+      const live = await getConnections(); // fetch from backend
+      const liveIds = live.map(c => c.connectionId || c.id);
+      const valid = saved.filter(c => liveIds.includes(c.id)); // keep only existing ones
+      localStorage.setItem("sb_connections", JSON.stringify(valid));
+      setConnections(valid);
+      if (valid.length) setActiveConnectionId(valid[0].id);
+    } catch {
+      // if API fails, just load from localStorage as fallback
+      setConnections(saved);
+      if (saved.length) setActiveConnectionId(saved[0].id);
+    }
+  };
+  syncConnections();
+}, []);
   useEffect(() => {
     if (activeConnectionId) fetchSensors(activeConnectionId);
     else setSensors([]);
@@ -154,28 +170,51 @@ const Sensor = () => {
             {connections.length === 0 ? (
               <p className="mb-0 small" style={{ color: "var(--sb-muted)" }}>No connections yet. Add one to get started.</p>
             ) : (
-              connections.map(conn => (
-                <div key={conn.id} className="d-flex align-items-center gap-1">
-                  <button
-                    className={`btn ${activeConnectionId === conn.id ? "sb-connect-btn" : "btn-outline-secondary"}`}
-                    style={{ borderRadius: "50px", padding: "6px 18px", fontWeight: 600 }}
-                    onClick={() => setActiveConnectionId(conn.id)}>
-                    <i className="bi bi-hdd-network me-1"></i>{conn.name}
-                  </button>
-                  <button className="btn btn-sm btn-outline-secondary"
-                    style={{ borderRadius: "50%", width: "32px", height: "32px", padding: 0 }}
-                    title="Edit"
-                    onClick={() => setEditingConnection(conn)}>
-                    <i className="bi bi-pencil" style={{ fontSize: "0.75rem" }}></i>
-                  </button>
-                  <button className="btn btn-sm btn-outline-danger"
-                    style={{ borderRadius: "50%", width: "32px", height: "32px", padding: 0 }}
-                    title="Delete"
-                    onClick={() => handleDeleteConnection(conn.id)}>
-                    <i className="bi bi-trash" style={{ fontSize: "0.75rem" }}></i>
-                  </button>
-                </div>
-              ))
+             // ✅ Replace with this
+connections.map(conn => (
+  <div key={conn.id} className="d-flex align-items-center position-relative me-2">
+    {/* Main pill button */}
+    <button
+      className={`btn ${activeConnectionId === conn.id ? "sb-connect-btn" : "btn-outline-secondary"}`}
+      style={{ borderRadius: "50px", padding: "6px 40px 6px 16px", fontWeight: 600 }}
+      onClick={() => setActiveConnectionId(conn.id)}>
+      <i className="bi bi-hdd-network me-1"></i>{conn.name}
+    </button>
+
+    {/* 3-dot menu sitting inside the pill on the right edge */}
+    <div className="dropdown position-absolute" style={{ right: "10px" }}>
+      <button
+        className="btn btn-sm p-0 border-0 bg-transparent d-flex align-items-center justify-content-center"
+        style={{
+          color: activeConnectionId === conn.id ? "white" : "var(--sb-muted)",
+          width: "20px", height: "20px"
+        }}
+        data-bs-toggle="dropdown"
+        aria-expanded="false"
+        onClick={(e) => e.stopPropagation()}>
+        <i className="bi bi-three-dots-vertical" style={{ fontSize: "0.8rem" }}></i>
+      </button>
+      <ul className="dropdown-menu dropdown-menu-end shadow border-0 py-1"
+        style={{ borderRadius: "10px", minWidth: "130px", fontSize: "0.88rem" }}>
+        <li>
+          <button
+            className="dropdown-item d-flex align-items-center gap-2 py-2"
+            onClick={() => setEditingConnection(conn)}>
+            <i className="bi bi-pencil" style={{ color: "var(--sb-accent)" }}></i>Edit
+          </button>
+        </li>
+        <li><hr className="dropdown-divider my-1" /></li>
+        <li>
+          <button
+            className="dropdown-item d-flex align-items-center gap-2 py-2 text-danger"
+            onClick={() => handleDeleteConnection(conn.id)}>
+            <i className="bi bi-trash"></i>Delete
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
+))
             )}
           </div>
 
