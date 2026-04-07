@@ -22,6 +22,7 @@ const [userId] = useState(localStorage.getItem("sb_userId"));
     localStorage.removeItem("sb_userId");
     localStorage.removeItem("sb_connectionId");
     localStorage.removeItem("sensorId");
+    localStorage.removeItem("sb_connections");
     setToken(null);
     setUsername("");
   };

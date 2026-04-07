@@ -24,24 +24,26 @@ const Sensor = () => {
 
  // ✅ Replace the first useEffect in sensor.jsx
 useEffect(() => {
-  const syncConnections = async () => {
-    const saved = JSON.parse(localStorage.getItem("sb_connections") || "[]");
-    if (!saved.length) return;
-
-    try {
-      const live = await getConnections(); // fetch from backend
-      const liveIds = live.map(c => c.connectionId || c.id);
-      const valid = saved.filter(c => liveIds.includes(c.id)); // keep only existing ones
-      localStorage.setItem("sb_connections", JSON.stringify(valid));
-      setConnections(valid);
-      if (valid.length) setActiveConnectionId(valid[0].id);
-    } catch {
-      // if API fails, just load from localStorage as fallback
-      setConnections(saved);
-      if (saved.length) setActiveConnectionId(saved[0].id);
-    }
-  };
-  syncConnections();
+    const syncConnections = async () => {
+        try {
+            const live = await getConnections();
+            const mapped = live.map(c => ({
+                id: c.connectionId,
+                name: c.connectionName,
+                connectionUrl: c.connectionUrl,
+                port: c.port,
+                tlsEnabled: c.tlsEnabled,
+                isPublic: c.isPublic,
+            }));
+            localStorage.setItem("sb_connections", JSON.stringify(mapped));
+            setConnections(mapped);
+            if (mapped.length) setActiveConnectionId(mapped[0].id);
+        } catch {
+            setConnections([]);
+            setActiveConnectionId(null);
+        }
+    };
+    syncConnections();
 }, []);
   useEffect(() => {
     if (activeConnectionId) fetchSensors(activeConnectionId);
