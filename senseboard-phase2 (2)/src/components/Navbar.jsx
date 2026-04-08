@@ -52,8 +52,8 @@ const Navbar = ({ theme, onThemeToggle }) => {
                 </NavLink>
               </li>
               <li className="nav-item">
-                <NavLink className="nav-link sb-nav-link" to="/connection">
-                  <i className="bi bi-plug me-1"></i>Connection
+                <NavLink className="nav-link sb-nav-link" to="/kpi">
+                  <i className="bi bi-plug me-1"></i>KPI
                 </NavLink>
               </li>
               <li className="nav-item">

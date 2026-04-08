@@ -5,15 +5,14 @@ import { useMqtt } from "./hooks/useMQTT";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
-import Connection from "./pages/Connection";
 import Setup from "./pages/setup";
-
+import KPIManagement from "./pages/KPIManagement";
 import Sensor from "./pages/Sensor";
 import Dashboard from "./pages/Dashboard";
-
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./App.css";
+
 
 function App() {
   const [theme, setTheme] = useState("light");
@@ -31,7 +30,7 @@ function App() {
         <Layout theme={theme} onThemeToggle={toggleTheme}>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/connection" element={<Connection />} />
+            <Route path="/KPIManagement" element={<KPIManagement />} />
             
             <Route path="/sensor" element={<ProtectedRoute><Sensor /></ProtectedRoute>} />
             <Route path="/dashboard" element={<Dashboard />} />
