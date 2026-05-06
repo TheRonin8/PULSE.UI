@@ -11,3 +11,10 @@ export const getProtocols = async () => {
   const response = await api.get(url);
   return response.data;
 };
+
+  
+export const getProtocolsByAdmin = () =>
+  api.get("/api/protocols/admin/all");
+
+export const updateProtocolAccess = (protocolId,accessAllowed) =>
+  api.put(`/api/protocols/${protocolId}`,{accessAllowed});

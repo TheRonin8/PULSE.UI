@@ -4,7 +4,7 @@
    CSS VARIABLES — LIGHT (default) & DARK
 ============================================================ */
 :root {
-  --sb-primary:        #0f4c81;
+  --sb-primary:        #00c6ae;
   --sb-accent:         #00c6ae;
   --sb-accent-glow:    rgba(0, 198, 174, 0.4);
   --sb-accent-glow-sm: rgba(0, 198, 174, 0.15);
@@ -92,9 +92,9 @@ body::before {
 }
 
 .sb-logo-icon {
-  width: 36px; height: 36px;
+  width: 106px; height: 106px;
   background: linear-gradient(135deg, var(--sb-primary), #1a6db5);
-  border-radius: 8px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -107,7 +107,7 @@ body::before {
   font-family: 'Syne', sans-serif;
   font-weight: 800;
   font-size: 1.2rem;
-  background: linear-gradient(90deg, var(--sb-primary) 0%, var(--sb-accent) 50%, var(--sb-primary) 100%);
+  background: linear-gradient(var(--sb-primary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

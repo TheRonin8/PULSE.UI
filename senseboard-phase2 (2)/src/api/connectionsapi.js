@@ -27,10 +27,12 @@ export const createConnection = async (payload) => {
     return response.data;
 };
 
-export const getConnections = async () => {
-    const response = await api.get("/api/Connections");
-    return response.data;
+
+    export const getConnections = async () => {
+  const response = await api.get("/api/Connections/all");
+  return response.data;
 };
+
 export const updateConnection = async (id, payload) => {
   const response = await api.put(`/api/Connections/${id}`, {
     connectionName: payload.connectionName,
